@@ -1,0 +1,6 @@
+Django==5.0.7
+djangorestframework==3.15.2
+djangorestframework-simplejwt==5.3.1
+python-decouple==3.8     # For environment variables (.env)
+#psycopg2-binary==2.9.9   # PostgreSQL support (optional for production)
+#gunicorn==23.0.0         # For deployment (optional, production)

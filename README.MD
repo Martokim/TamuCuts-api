@@ -15,6 +15,7 @@ TamuCuts helps streamline butchery operations by managing products, sales, inven
 
 ---
 ## 📂 Project Structure (planned)
+```
 TamuCuts-api/
 │
 ├── TamuCuts/ # Main Django project folder (settings, urls, wsgi)
@@ -29,3 +30,4 @@ TamuCuts-api/
 ├── README.md
 └── .gitignore          # Ignore venv/, __pycache__/, etc.
 
+```

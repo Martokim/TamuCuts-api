@@ -18,7 +18,7 @@ TamuCuts helps streamline butchery operations by managing products, sales, inven
 ```
 TamuCuts-api/
 │
-├── TamuCuts/ # Main Django project folder (settings, urls, wsgi)
+├── TamuCuts/ # Main Django project folder (settings, urls, wsgi
 ├── products/ # Products app (meat types, stock, pricing)
 ├── orders/ # Orders app (sales, customer orders)
 ├── suppliers/ # Suppliers app (meat suppliers, deliveries)

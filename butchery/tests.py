@@ -14,7 +14,7 @@ class UserAPITests(APITestCase):
         )
 
     def test_user_list(self):
-        url = reverse("user-list")  # make sure DRF router is used
+        url = reverse("user-list") 
         self.client.force_authenticate(user=self.admin)
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)

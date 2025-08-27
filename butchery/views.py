@@ -1,6 +1,8 @@
 from rest_framework import viewsets
-from .models import User, Product, Order, OrderItem
-from .serializers import UserSerializer, ProductSerializer, OrderSerializer, OrderItemSerializer
+from .models import User, Product, Order, OrderItem , ScaleReading, StockNotification
+from .serializers import (UserSerializer,
+    ProductSerializer, OrderSerializer, OrderItemSerializer, 
+    ScaleReadingSerializer, StockNotificationSerializer)
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -21,3 +23,12 @@ class OrderViewSet(viewsets.ModelViewSet):
 class OrderItemViewSet(viewsets.ModelViewSet):
     queryset = OrderItem.objects.all()
     serializer_class = OrderItemSerializer
+
+class ScaleReadingViewSet(viewsets.ModelViewSet):
+    queryset = ScaleReading.objects.all()
+    serializer_class = ScaleReadingSerializer
+
+class StockNotificationViewSet(viewsets.ModelViewSet):
+    queryset = StockNotification.objects.all()
+    serializer_class = StockNotificationSerializer
+

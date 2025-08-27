@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
 
 
 class User(AbstractUser):
@@ -103,3 +104,57 @@ class OrderItem(models.Model):
     def get_total_price(self):
         """Get total price for this order item."""
         return self.quantity * self.product.price
+
+class ScaleReading(models.Model):
+    """
+    Captures live weight data from a digital scale, links to a product,
+    and calculates total price automatically.
+    """
+    product = models.ForeignKey(Product, related_name="scale_readings", on_delete=models.CASCADE)
+    weight_kg = models.FloatField()
+    price_per_kg = models.DecimalField(max_digits=10, decimal_places=2)
+    total_price = models.DecimalField(max_digits=12, decimal_places=2, blank=True)
+    recorded_at = models.DateTimeField(default=timezone.now)
+
+    def save(self, *args, **kwargs):
+        # auto-calc total_price if not provided
+        if not self.total_price:
+            self.total_price = self.weight_kg * float(self.price_per_kg)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.weight_kg} kg {self.product.name} @ {self.price_per_kg}/kg"
+
+class StockNotification(models.Model):
+    """
+    Stores threshold values for stock monitoring.
+    Notifications can later trigger SMS/email.
+    """
+    product = models.ForeignKey(Product, related_name="notifications", on_delete=models.CASCADE)
+    threshold_kg = models.FloatField(help_text="Trigger notification when stock < threshold")
+    is_triggered = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def check_and_trigger(self):
+        """Simple check for low stock."""
+        if self.product.stock_quantity < self.threshold_kg:
+            self.is_triggered = True
+            # In production, integrate SMS/email here
+        else:
+            self.is_triggered = False
+        self.save()
+
+    def __str__(self):
+        status = "⚠️ Low Stock" if self.is_triggered else "OK"
+        return f"Notification for {self.product.name} ({status})"
+
+class SalesInsight(models.Model):
+    """
+    Stores lightweight sales analytics (can be auto-updated by signals or cron).
+    """
+    best_selling_product = models.CharField(max_length=100, blank=True, null=True)
+    total_quantity_sold = models.FloatField(default=0)
+    calculated_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Insights @ {self.calculated_at}: {self.best_selling_product} ({self.total_quantity_sold} kg)"

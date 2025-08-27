@@ -1,18 +1,38 @@
 from rest_framework import serializers
-from .models import User, Product, Order, OrderItem
+from .models import User, Product, Order, OrderItem, ScaleReading ,StockNotification, SalesInsight
+
 
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ["id", "username", "email", "is_staff", "is_active"]
+        read_only_fields = ["is_staff", "is_active"]
+    def create(self, validated_data):
+        user = User(**validated_data)
+        if pwd:
+            user.set_password(pwd)
+        else:
+            user.set_unusable_password()
+            return user 
+    
+    def update(self, instance , validated_data):
+        pwd = validated_data.pop("pasword",None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr,value)
+        if pwd:
+            instance.set_password(pwd)
+        instance.save()
+        return instance
+    
 
 
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = ["id", "name", "category", "price", "stock_quantity", "created_at", "updated_at"]
-
+        read_only_fields = ["Created_at","updated_at"
+                            ]
 
 class OrderItemSerializer(serializers.ModelSerializer):
     product = ProductSerializer(read_only=True)
@@ -22,7 +42,13 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = OrderItem
-        fields = ["id", "order", "product", "product_id", "quantity"]
+        fields = ["id", "order", "product", "product_id", "quantity","total_price"]
+    def get_total_price(self,obj):
+        return obj.get_total_price()
+    def validate_quantity(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("quantity must be a positive intager")
+        return value
 
 
 class OrderSerializer(serializers.ModelSerializer):
@@ -35,3 +61,42 @@ class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = ["id", "customer", "customer_id", "status", "created_at", "updated_at", "items"]
+        read_only_fields = ["created_at", "updated_at","items","total_price"]
+    
+    def get_total_price(self,obj):
+        return obj.get_total_price()
+
+class ScaleReadingSerializer(serializers.ModelSerializer):
+    product = ProductSerializer(read_only=True)
+    product_id = serializers.PrimaryKeyRelatedField( queryset=Product.objects.all(), source="product", write_only=True)
+    
+    class Meta:
+        model = ScaleReading
+        fields = ["id","product","product_id","weigh_kg","price_per_kg","total_price","recorded_at"]
+        read_only_fields = ["total_price","recorded_at"]
+
+    def create(self, validated_data):
+        #if price_per_kg not provided user the product's price
+        product = validated_data.get("product")
+        if not validated_data.get("price_per_kg"):
+            validated_data["price_per_kg"] = product.price
+        #total_price will be computed in model.save() 
+        instance = super().create(validated_data)
+        return instance 
+
+
+class StockNotificationSerializer(serializers.ModelSerializer):
+    product = ProductSerializer(read_only=True)
+    product_id = serializers.PrimaryKeyRelatedField(
+        queryset=Product.objects.all(), source="product", write_only=True
+    )
+
+    class Meta:
+        model = StockNotification
+        fields = ["id", "product", "product_id", "threshold_kg", "is_triggered", "created_at"]
+        read_only_fields = ["is_triggered", "created_at"]
+
+    def validate_threshold_kg(self, value):
+        if value < 0:
+            raise serializers.ValidationError("threshold_kg must be non-negative.")
+        return value

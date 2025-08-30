@@ -1,6 +1,5 @@
 from rest_framework import serializers
-from .models import User, Product, Order, OrderItem, ScaleReading ,StockNotification, SalesInsight
-
+from .models import User, Product, Order, OrderItem, ScaleReading ,StockNotification,StockTransaction, SalesInsight
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -42,13 +41,29 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = OrderItem
-        fields = ["id", "order", "product", "product_id", "quantity","total_price"]
-    def get_total_price(self,obj):
-        return obj.get_total_price()
-    def validate_quantity(self, value):
-        if value <= 0:
-            raise serializers.ValidationError("quantity must be a positive intager")
-        return value
+        fields = ["id", "order", "product", "product_id", "quantity"]
+    def validate(self, data):
+        product = data["product"]
+        quantity = data["quantity"]
+        if quantity <= 0:
+            raise serializers.ValidationError("Quantity must be a positive integer")
+        if product.stock_quantity < quantity:
+            raise serializers.ValidationError("Insufficient stock for this product")
+        return data
+    def create(self, validated_data):
+        product = validated_data["product"]
+        quantity = validated_data["quantity"]
+        product.stock_quantity -= quantity
+        product.save()
+        # Create corrssponding StockTransaction 
+        StockTransaction.objects.create(
+            product=product,
+            transaction_type="OUT",
+            quantity=quantity,
+            date=timezone.now().date(),
+            remarks="Sale via order"
+        )
+        return super().create(validated_data)
 
 
 class OrderSerializer(serializers.ModelSerializer):
@@ -100,3 +115,21 @@ class StockNotificationSerializer(serializers.ModelSerializer):
         if value < 0:
             raise serializers.ValidationError("threshold_kg must be non-negative.")
         return value
+
+
+class StockTransactionSerializer(serializers.ModelSerializer):
+    product = ProductSerializer(read_only=True)
+    product_id = serializers.PrimaryKeyRelatedField(
+        queryset=Product.objects.all(), source="product", write_only=True
+    )
+
+    class Meta:
+        model = StockTransaction
+        fields = ["id", "product", "product_id", "transaction_type", "quantity", "date", "remarks", "created_at"]
+        read_only_fields = ["created_at"]
+
+    def validate_quantity(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("quantity must be a positive integer.")
+        return value
+    

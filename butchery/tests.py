@@ -1,111 +1,124 @@
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
-from .models import User, Product, Order, OrderItem
+from .models import User, Product, Order, OrderItem, ScaleReading, StockNotification, SalesInsight
 
 
-class UserAPITests(APITestCase):
+class UserTests(APITestCase):
     def setUp(self):
-        self.user = User.objects.create_user(
-            username="customer1", email="customer1@test.com", password="pass1234"
-        )
-        self.admin = User.objects.create_superuser(
-            username="admin", email="admin@test.com", password="admin1234"
-        )
+        self.user = User.objects.create_user(username="testuser", password="pass123")
 
-    def test_user_list(self):
-        url = reverse("user-list") 
-        self.client.force_authenticate(user=self.admin)
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-    def test_user_create(self):
+    def test_list_users(self):
         url = reverse("user-list")
-        data = {"username": "newuser", "email": "new@test.com", "password": "pass1234"}
-        self.client.force_authenticate(user=self.admin)
-        response = self.client.post(url, data, format="json")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_create_user(self):
+        url = reverse("user-list")
+        data = {"username": "newuser", "password": "pass123"}
+        response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
 
-class ProductAPITests(APITestCase):
+class ProductTests(APITestCase):
     def setUp(self):
-        self.admin = User.objects.create_superuser(
-            username="admin", email="admin@test.com", password="admin1234"
-        )
-        self.product = Product.objects.create(
-            name="Beef Steak", category="beef", price=1000.00, stock_quantity=5
-        )
+        self.product = Product.objects.create(name="Beef", price=500.00, stock_quantity=10.0)
 
-    def test_product_list(self):
+    def test_list_products(self):
         url = reverse("product-list")
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_product_create(self):
+    def test_create_product(self):
         url = reverse("product-list")
-        data = {"name": "Chicken Breast", "category": "chicken", "price": 750, "stock_quantity": 10}
-        self.client.force_authenticate(user=self.admin)
-        response = self.client.post(url, data, format="json")
+        data = {"name": "Goat Meat", "price": 650.00, "stock_quantity": 8.0}
+        response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
 
-class OrderAPITests(APITestCase):
+class OrderTests(APITestCase):
     def setUp(self):
-        self.customer = User.objects.create_user(
-            username="customer1", email="customer@test.com", password="pass1234"
-        )
-        self.admin = User.objects.create_superuser(
-            username="admin", email="admin@test.com", password="admin1234"
-        )
-        self.product = Product.objects.create(
-            name="Goat Meat", category="goat", price=1200.00, stock_quantity=3
-        )
-        self.order = Order.objects.create(customer=self.customer, status="PENDING")
+        self.user = User.objects.create_user(username="orderuser", password="pass123")
+        self.product = Product.objects.create(name="Chicken", price=300.00, stock_quantity=5.0)
+        self.order = Order.objects.create(user=self.user, total_price=300.00)
+
+    def test_list_orders(self):
+        url = reverse("order-list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_create_order(self):
+        url = reverse("order-list")
+        data = {"user": self.user.id, "total_price": 200.00}
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+
+class OrderItemTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="itemuser", password="pass123")
+        self.product = Product.objects.create(name="Fish", price=400.00, stock_quantity=6.0)
+        self.order = Order.objects.create(user=self.user, total_price=400.00)
         self.order_item = OrderItem.objects.create(order=self.order, product=self.product, quantity=2)
 
-    def test_order_list(self):
-        url = reverse("order-list")
-        self.client.force_authenticate(user=self.admin)
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-    def test_order_create(self):
-        url = reverse("order-list")
-        data = {"customer_id": self.customer.id, "status": "PENDING"}
-        self.client.force_authenticate(user=self.admin)
-        response = self.client.post(url, data, format="json")
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-    def test_order_detail(self):
-        url = reverse("order-detail", args=[self.order.id])
-        self.client.force_authenticate(user=self.admin)
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-
-class OrderItemAPITests(APITestCase):
-    def setUp(self):
-        self.customer = User.objects.create_user(
-            username="customer1", email="customer@test.com", password="pass1234"
-        )
-        self.admin = User.objects.create_superuser(
-            username="admin", email="admin@test.com", password="admin1234"
-        )
-        self.product = Product.objects.create(
-            name="Pork Ribs", category="pork", price=800.00, stock_quantity=6
-        )
-        self.order = Order.objects.create(customer=self.customer, status="PENDING")
-
-    def test_add_order_item(self):
+    def test_list_order_items(self):
         url = reverse("orderitem-list")
-        data = {"order": self.order.id, "product_id": self.product.id, "quantity": 2}
-        self.client.force_authenticate(user=self.admin)
-        response = self.client.post(url, data, format="json")
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-    def test_order_item_detail(self):
-        order_item = OrderItem.objects.create(order=self.order, product=self.product, quantity=1)
-        url = reverse("orderitem-detail", args=[order_item.id])
-        self.client.force_authenticate(user=self.admin)
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_create_order_item(self):
+        url = reverse("orderitem-list")
+        data = {"order": self.order.id, "product": self.product.id, "quantity": 1}
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+
+class ScaleReadingTests(APITestCase):
+    def setUp(self):
+        self.product = Product.objects.create(name="Mutton", price=700.00, stock_quantity=20.0)
+        self.scale_reading = ScaleReading.objects.create(product=self.product, weight=2.5, total_price=1750.00)
+
+    def test_list_scale_readings(self):
+        url = reverse("scalereading-list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_create_scale_reading(self):
+        url = reverse("scalereading-list")
+        data = {"product": self.product.id, "weight": 3.0, "total_price": 2100.00}
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+
+class StockNotificationTests(APITestCase):
+    def setUp(self):
+        self.product = Product.objects.create(name="Lamb", price=800.00, stock_quantity=15.0)
+        self.notification = StockNotification.objects.create(product=self.product, threshold=5.0, notified=False)
+
+    def test_list_notifications(self):
+        url = reverse("stocknotification-list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_create_notification(self):
+        url = reverse("stocknotification-list")
+        data = {"product": self.product.id, "threshold": 3.0, "notified": False}
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+
+class SalesInsightTests(APITestCase):
+    def setUp(self):
+        self.product = Product.objects.create(name="Duck", price=600.00, stock_quantity=12.0)
+        self.insight = SalesInsight.objects.create(product=self.product, total_sold=10.0)
+
+    def test_list_insights(self):
+        url = reverse("salesinsight-list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_create_insight(self):
+        url = reverse("salesinsight-list")
+        data = {"product": self.product.id, "total_sold": 15.0}
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)

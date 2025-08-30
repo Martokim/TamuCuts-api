@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import User, Product, Order, OrderItem
+from .models import User, Product, Order, OrderItem , StockTransaction 
 
 
 @admin.register(User)
@@ -44,3 +44,10 @@ class OrderItemAdmin(admin.ModelAdmin):
     @admin.display(description="Total")
     def get_total(self, obj):
         return obj.get_total_price()
+
+@admin.register(StockTransaction)
+class StockTransactionAdmin(admin.ModelAdmin):
+    list_display = ("product", "transaction_type", "quantity", "date", "created_at")
+    list_filter = ("transaction_type", "date")
+    search_fields = ("product__name",)
+    ordering = ("-created_at",)

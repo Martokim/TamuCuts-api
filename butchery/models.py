@@ -158,3 +158,24 @@ class SalesInsight(models.Model):
 
     def __str__(self):
         return f"Insights @ {self.calculated_at}: {self.best_selling_product} ({self.total_quantity_sold} kg)"
+
+class StockTransaction(models.Model):
+    class TransactionType(models.TextChoices):
+        IN = "IN", "Stock In"
+        OUT = "OUT", "Stock Out"
+        CLOSE = "CLOSE", "Closing Stock"
+
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="stock_transactions")
+    transaction_type = models.CharField(max_length=20, choices=TransactionType.choices)
+    quantity = models.FloatField()
+    date = models.DateField(default=timezone.now)
+    remarks = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Stock Transaction"
+        verbose_name_plural = "Stock Transactions"
+
+    def __str__(self):
+        return f"{self.transaction_type} - {self.product.name} ({self.quantity} kg)"

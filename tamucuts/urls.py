@@ -3,9 +3,9 @@ from django.urls import path, include
 from rest_framework import routers
 from butchery.views import (
     UserViewSet, ProductViewSet,
-      OrderViewSet, OrderItemViewSet, 
-      ScaleReadingViewSet, StockNotificationViewSet,
-     StockTransactionViewSet ,DailyReportView )
+    OrderViewSet, OrderItemViewSet, 
+    ScaleReadingViewSet, StockNotificationViewSet,
+    StockTransactionViewSet ,DailyReportView )
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 router = routers.DefaultRouter()

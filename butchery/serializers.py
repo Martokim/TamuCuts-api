@@ -42,10 +42,14 @@ class OrderItemSerializer(serializers.ModelSerializer):
     product_id = serializers.PrimaryKeyRelatedField(
         queryset=Product.objects.all(), source="product", write_only=True
     )
+    total_price = serializers.SerializerMethodField()
+
+    def get_total_price(self, obje):
+        return obje.get_total_price()
 
     class Meta:
         model = OrderItem
-        fields = ["id", "order", "product", "product_id", "quantity"]
+        fields = ["id", "customer", "customer_id", "status", "payment_type", "created_at", "updated_at", "items", "total_price"]
     def validate(self, data):
         product = data["product"]
         quantity = data["quantity"]

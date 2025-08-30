@@ -83,8 +83,8 @@ class OrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        fields = ["id", "customer", "customer_id","items", "status", "created_at", "updated_at", "payment"]
-        read_only_fields = ["created_at", "updated_at","items","total_price"]
+        fields = ["id", "customer", "customer_id", "status", "payment_type", "created_at", "updated_at", "items"]
+        read_only_fields = ["created_at", "updated_at", "items"]
     
     def get_total_price(self,obj):
         return obj.get_total_price()

@@ -1,12 +1,13 @@
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
-from .models import User, Product, Order, OrderItem, ScaleReading, StockNotification, SalesInsight
+from .models import User, Product, Order, OrderItem, ScaleReading, StockNotification, SalesInsight, StockTransaction
 
 
 class UserTests(APITestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username="testuser", password="pass123")
+        self.user = User.objects.create_user(username="testuser", password="pass123", role="admin")
+        self.client.force_authenticate(user=self.user)
 
     def test_list_users(self):
         url = reverse("user-list")
@@ -22,6 +23,8 @@ class UserTests(APITestCase):
 
 class ProductTests(APITestCase):
     def setUp(self):
+        self.user = User.objects.create_user(username="testuser", password="pass123", role="admin")
+        self.client.force_authenticate(user=self.user)
         self.product = Product.objects.create(name="Beef", price=500.00, stock_quantity=10.0)
 
     def test_list_products(self):
@@ -38,9 +41,10 @@ class ProductTests(APITestCase):
 
 class OrderTests(APITestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username="orderuser", password="pass123")
+        self.user = User.objects.create_user(username="orderuser", password="pass123", role="staff")
+        self.client.force_authenticate(user=self.user)
         self.product = Product.objects.create(name="Chicken", price=300.00, stock_quantity=5.0)
-        self.order = Order.objects.create(user=self.user, total_price=300.00)
+        self.order = Order.objects.create(customer=self.user)
 
     def test_list_orders(self):
         url = reverse("order-list")
@@ -49,16 +53,17 @@ class OrderTests(APITestCase):
 
     def test_create_order(self):
         url = reverse("order-list")
-        data = {"user": self.user.id, "total_price": 200.00}
+        data = {"customer": self.user.id}
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
 
 class OrderItemTests(APITestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username="itemuser", password="pass123")
+        self.user = User.objects.create_user(username="itemuser", password="pass123", role="staff")
+        self.client.force_authenticate(user=self.user)
         self.product = Product.objects.create(name="Fish", price=400.00, stock_quantity=6.0)
-        self.order = Order.objects.create(user=self.user, total_price=400.00)
+        self.order = Order.objects.create(customer=self.user)
         self.order_item = OrderItem.objects.create(order=self.order, product=self.product, quantity=2)
 
     def test_list_order_items(self):
@@ -72,11 +77,23 @@ class OrderItemTests(APITestCase):
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
+    def test_create_order_item_with_stock_deduction(self):
+        url = reverse("orderitem-list")
+        data = {"order": self.order.id, "product": self.product.id, "quantity": 2}
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.stock_quantity, 4.0)
+        transaction = StockTransaction.objects.get(product=self.product, transaction_type="OUT")
+        self.assertEqual(transaction.quantity, 2)
+
 
 class ScaleReadingTests(APITestCase):
     def setUp(self):
+        self.user = User.objects.create_user(username="scaleuser", password="pass123", role="staff")
+        self.client.force_authenticate(user=self.user)
         self.product = Product.objects.create(name="Mutton", price=700.00, stock_quantity=20.0)
-        self.scale_reading = ScaleReading.objects.create(product=self.product, weight=2.5, total_price=1750.00)
+        self.scale_reading = ScaleReading.objects.create(product=self.product, weight_kg=2.5, price_per_kg=700.00, total_price=1750.00)
 
     def test_list_scale_readings(self):
         url = reverse("scalereading-list")
@@ -85,15 +102,17 @@ class ScaleReadingTests(APITestCase):
 
     def test_create_scale_reading(self):
         url = reverse("scalereading-list")
-        data = {"product": self.product.id, "weight": 3.0, "total_price": 2100.00}
+        data = {"product": self.product.id, "weight_kg": 3.0, "price_per_kg": 700.00}
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
 
 class StockNotificationTests(APITestCase):
     def setUp(self):
+        self.user = User.objects.create_user(username="notificationuser", password="pass123", role="admin")
+        self.client.force_authenticate(user=self.user)
         self.product = Product.objects.create(name="Lamb", price=800.00, stock_quantity=15.0)
-        self.notification = StockNotification.objects.create(product=self.product, threshold=5.0, notified=False)
+        self.notification = StockNotification.objects.create(product=self.product, threshold_kg=5.0, is_triggered=False)
 
     def test_list_notifications(self):
         url = reverse("stocknotification-list")
@@ -102,15 +121,16 @@ class StockNotificationTests(APITestCase):
 
     def test_create_notification(self):
         url = reverse("stocknotification-list")
-        data = {"product": self.product.id, "threshold": 3.0, "notified": False}
+        data = {"product": self.product.id, "threshold_kg": 3.0}
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
 
 class SalesInsightTests(APITestCase):
     def setUp(self):
-        self.product = Product.objects.create(name="Duck", price=600.00, stock_quantity=12.0)
-        self.insight = SalesInsight.objects.create(product=self.product, total_sold=10.0)
+        self.user = User.objects.create_user(username="insightuser", password="pass123", role="admin")
+        self.client.force_authenticate(user=self.user)
+        self.insight = SalesInsight.objects.create(best_selling_product="Duck", total_quantity_sold=10.0)
 
     def test_list_insights(self):
         url = reverse("salesinsight-list")
@@ -119,6 +139,6 @@ class SalesInsightTests(APITestCase):
 
     def test_create_insight(self):
         url = reverse("salesinsight-list")
-        data = {"product": self.product.id, "total_sold": 15.0}
+        data = {"best_selling_product": "Duck", "total_quantity_sold": 15.0}
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)

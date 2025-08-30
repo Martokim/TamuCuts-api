@@ -74,6 +74,11 @@ class Order(models.Model):
         choices=Status.choices,
         default=Status.PENDING
     )
+    payment_type = models.CharField(
+    max_length=20,
+    choices=[("CASH", "Cash"), ("MOBILE", "Mobile Money")],
+    default="CASH"
+    )
 
     class Meta:
         ordering = ["-created_at"]

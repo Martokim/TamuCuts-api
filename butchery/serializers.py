@@ -5,22 +5,26 @@ from .models import User, Product, Order, OrderItem, ScaleReading ,StockNotifica
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["id", "username", "email", "is_staff", "is_active"]
+        fields = ["id", "username", "email", "role", "phone_number", "is_staff", "is_active", "password"]
         read_only_fields = ["is_staff", "is_active"]
+        extra_kwargs = {"password": {"write_only": True}}
+
     def create(self, validated_data):
+        password = validated_data.pop("password", None)
         user = User(**validated_data)
-        if pwd:
-            user.set_password(pwd)
+        if password:
+            user.set_password(password)
         else:
             user.set_unusable_password()
-            return user 
-    
-    def update(self, instance , validated_data):
-        pwd = validated_data.pop("pasword",None)
+        user.save()
+        return user
+
+    def update(self, instance, validated_data):
+        password = validated_data.pop("password", None)
         for attr, value in validated_data.items():
-            setattr(instance, attr,value)
-        if pwd:
-            instance.set_password(pwd)
+            setattr(instance, attr, value)
+        if password:
+            instance.set_password(password)
         instance.save()
         return instance
     

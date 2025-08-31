@@ -5,7 +5,7 @@ from butchery.views import (
     UserViewSet, ProductViewSet,
     OrderViewSet, OrderItemViewSet, 
     ScaleReadingViewSet, StockNotificationViewSet,
-    StockTransactionViewSet ,DailyReportView )
+    StockTransactionViewSet ,DailyReportView , SalesInsightViewSet)
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 router = routers.DefaultRouter()
@@ -14,6 +14,7 @@ router.register(r'products', ProductViewSet)
 router.register(r'orders', OrderViewSet)
 router.register(r'order-items', OrderItemViewSet)
 router.register(r'scale-readings', ScaleReadingViewSet)
+router.register(r'sales-insights', SalesInsightViewSet)
 router.register(r'notifications', StockNotificationViewSet)
 router.register(r'stock-transactions', StockTransactionViewSet)
 

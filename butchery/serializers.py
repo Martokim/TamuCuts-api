@@ -44,12 +44,13 @@ class OrderItemSerializer(serializers.ModelSerializer):
     )
     total_price = serializers.SerializerMethodField()
 
-    def get_total_price(self, obje):
-        return obje.get_total_price()
-
     class Meta:
         model = OrderItem
-        fields = ["id", "customer", "customer_id", "status", "payment_type", "created_at", "updated_at", "items", "total_price"]
+        fields = ["id", "order", "product", "product_id", "quantity", "total_price"]
+
+    def get_total_price(self, obj):
+        return obj.get_total_price()
+
     def validate(self, data):
         product = data["product"]
         quantity = data["quantity"]
@@ -58,12 +59,13 @@ class OrderItemSerializer(serializers.ModelSerializer):
         if product.stock_quantity < quantity:
             raise serializers.ValidationError("Insufficient stock for this product")
         return data
+
     def create(self, validated_data):
         product = validated_data["product"]
         quantity = validated_data["quantity"]
         product.stock_quantity -= quantity
         product.save()
-        # Create corrssponding StockTransaction 
+        # Create corresponding StockTransaction
         StockTransaction.objects.create(
             product=product,
             transaction_type="OUT",
@@ -72,7 +74,6 @@ class OrderItemSerializer(serializers.ModelSerializer):
             remarks="Sale via order"
         )
         return super().create(validated_data)
-
 
 class OrderSerializer(serializers.ModelSerializer):
     customer = UserSerializer(read_only=True)
@@ -91,11 +92,11 @@ class OrderSerializer(serializers.ModelSerializer):
 
 class ScaleReadingSerializer(serializers.ModelSerializer):
     product = ProductSerializer(read_only=True)
-    product_id = serializers.PrimaryKeyRelatedField( queryset=Product.objects.all(), source="product", write_only=True)
+    product_id = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all(), source="product", write_only=True)
     
     class Meta:
         model = ScaleReading
-        fields = ["id","product","product_id","weigh_kg","price_per_kg","total_price","recorded_at"]
+        fields = ["id","product","product_id","weight_kg","price_per_kg","total_price","recorded_at"]
         read_only_fields = ["total_price","recorded_at"]
 
     def create(self, validated_data):
@@ -140,4 +141,8 @@ class StockTransactionSerializer(serializers.ModelSerializer):
         if value <= 0:
             raise serializers.ValidationError("quantity must be a positive integer.")
         return value
-    
+class SalesInsightSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SalesInsight
+        fields = ["id", "best_selling_product", "total_quantity_sold", "calculated_at"]
+        read_only_fields = ["calculated_at"]

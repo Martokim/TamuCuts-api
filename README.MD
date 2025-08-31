@@ -20,16 +20,22 @@ TamuCuts helps streamline butchery operations by managing products, sales, inven
 ```
 TamuCuts-api/
 │
-├── TamuCuts/ # Main Django project folder (settings, urls, wsgi
-├── products/ # Products app (meat types, stock, pricing)
-├── orders/ # Orders app (sales, customer orders)
-├── suppliers/ # Suppliers app (meat suppliers, deliveries)
-├── employees/ # Employees app (staff records, roles)
+├── tamucuts/              
+├── butchery/               
+│   ├── migrations/         
+│   ├── __init__.py
+│   ├── admin.py
+│   ├── apps.py
+│   ├── models.py
+│   ├── serializers.py
+│   ├── tests.py
+│   ├── urls.py
+│   ├── views.py
 │
-│
-├── requirements.txt    # Python dependencies
-├── manage.py           # Django project manager
-├── README.md
-└── .gitignore          # Ignore venv/, __pycache__/, etc.
+├── db.sqlite3              # Development database
+├── manage.py               # Django CLI
+├── requirements.txt        # Dependencies
+├── README.md               # This file
+└── .gitignore              # Ignore venv/, __pycache__/, etc.
 
 ```

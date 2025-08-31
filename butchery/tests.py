@@ -53,8 +53,10 @@ class OrderTests(APITestCase):
 
     def test_create_order(self):
         url = reverse("order-list")
-        data = {"customer": self.user.id, "status": "PENDING", "payment_type": "CASH"}
+        data = {"customer_id": self.user.id, "status": "PENDING", "payment_type": "CASH"}
         response = self.client.post(url, data)
+        if response.status_code != status.HTTP_201_CREATED:
+            print("Error details:", response.data)  # Keep for debugging if needed
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
 
@@ -62,9 +64,8 @@ class OrderItemTests(APITestCase):
     def setUp(self):
         self.user = User.objects.create_user(username="itemuser", password="pass123", role="staff")
         self.client.force_authenticate(user=self.user)
-        self.product = Product.objects.create(name="Fish", category="other", price=400.00, stock_quantity=6.0)
+        self.product = Product.objects.create(name="Fish", category="other", price=400.00, stock_quantity=20.0)
         self.order = Order.objects.create(customer=self.user, status="PENDING", payment_type="CASH")
-        self.order_item = OrderItem.objects.create(order=self.order, product=self.product, quantity=2)
 
     def test_list_order_items(self):
         url = reverse("orderitem-list")
@@ -75,15 +76,19 @@ class OrderItemTests(APITestCase):
         url = reverse("orderitem-list")
         data = {"order": self.order.id, "product_id": self.product.id, "quantity": 1}
         response = self.client.post(url, data)
+        if response.status_code != status.HTTP_201_CREATED:
+            print("Error details:", response.data)  # Keep for debugging if needed
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_create_order_item_with_stock_deduction(self):
         url = reverse("orderitem-list")
         data = {"order": self.order.id, "product_id": self.product.id, "quantity": 2}
         response = self.client.post(url, data)
+        if response.status_code != status.HTTP_201_CREATED:
+            print("Error details:", response.data)  # Keep for debugging if needed
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.product.refresh_from_db()
-        self.assertEqual(self.product.stock_quantity, 4.0)
+        self.assertEqual(self.product.stock_quantity, 18.0)
         transaction = StockTransaction.objects.get(product=self.product, transaction_type="OUT")
         self.assertEqual(transaction.quantity, 2)
 

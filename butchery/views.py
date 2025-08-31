@@ -1,8 +1,8 @@
 from rest_framework import viewsets
-from .models import User, Product, Order, OrderItem , ScaleReading, StockNotification , StockTransaction
+from .models import User, Product, Order, OrderItem , ScaleReading, StockNotification , StockTransaction , SalesInsight
 from .serializers import (UserSerializer,
     ProductSerializer, OrderSerializer, OrderItemSerializer, 
-    ScaleReadingSerializer, StockNotificationSerializer,StockTransactionSerializer)
+    ScaleReadingSerializer, StockNotificationSerializer,StockTransactionSerializer, SalesInsightSerializer)
 from rest_framework.views import APIView 
 from rest_framework.response import Response
 from rest_framework.permissions import BasePermission , IsAuthenticated
@@ -79,3 +79,8 @@ class DailyReportView(APIView):
             })
         except ValueError:
             return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=400)
+        
+class SalesInsightViewSet(viewsets.ModelViewSet):
+    queryset = SalesInsight.objects.all()
+    serializer_class = SalesInsightSerializer
+    permission_classes = [IsAdmin]

@@ -39,3 +39,41 @@ TamuCuts-api/
 └── .gitignore              # Ignore venv/, __pycache__/, etc.
 
 ```
+
+# Setup Instructions 
+###  Prerequisites 
+- Python 3.8 or higher (download from python.org).
+- Git (for cloning the repository).
+- Optional: Postman or a similar API client for testing endpoints.
+
+
+### Clone the repo
+```
+git clone https://github.com/Martokim/TamuCuts-api.git
+cd TamuCuts-api
+```
+
+### Create and Activate a Virtual Environment
+```
+python -m venv venv
+```
+### Install dependancies 
+```
+pip install -r requirements.txt
+```
+
+### Run Database Migrations
+```
+python manage.py makemigrations
+python manage.py migrate
+```
+
+### Create a Superuser (Admin Account)
+```
+python manage.py createsuperuser
+```
+### Run development server 🚀
+```
+python manage.py runserver
+```
+

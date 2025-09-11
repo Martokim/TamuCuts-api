@@ -42,7 +42,7 @@ TamuCuts-api/
 
 # Setup Instructions 
 ###  Prerequisites 
-- Python 3.8 or higher (download from python.org).
+- Python 3.8 or higher,  download from [python.org](https://www.python.org/).
 - Git (for cloning the repository).
 - Optional: Postman or a similar API client for testing endpoints.
 
